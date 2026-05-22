@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as TemplatesRouteImport } from './routes/templates'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as WSlugRouteImport } from './routes/w.$slug'
 import { Route as BuilderIdRouteImport } from './routes/builder.$id'
 
 const TemplatesRoute = TemplatesRouteImport.update({
@@ -29,6 +30,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WSlugRoute = WSlugRouteImport.update({
+  id: '/w/$slug',
+  path: '/w/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BuilderIdRoute = BuilderIdRouteImport.update({
   id: '/builder/$id',
   path: '/builder/$id',
@@ -40,12 +46,14 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/templates': typeof TemplatesRoute
   '/builder/$id': typeof BuilderIdRoute
+  '/w/$slug': typeof WSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/templates': typeof TemplatesRoute
   '/builder/$id': typeof BuilderIdRoute
+  '/w/$slug': typeof WSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -53,13 +61,20 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/templates': typeof TemplatesRoute
   '/builder/$id': typeof BuilderIdRoute
+  '/w/$slug': typeof WSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/dashboard' | '/templates' | '/builder/$id'
+  fullPaths: '/' | '/dashboard' | '/templates' | '/builder/$id' | '/w/$slug'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard' | '/templates' | '/builder/$id'
-  id: '__root__' | '/' | '/dashboard' | '/templates' | '/builder/$id'
+  to: '/' | '/dashboard' | '/templates' | '/builder/$id' | '/w/$slug'
+  id:
+    | '__root__'
+    | '/'
+    | '/dashboard'
+    | '/templates'
+    | '/builder/$id'
+    | '/w/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -67,6 +82,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   TemplatesRoute: typeof TemplatesRoute
   BuilderIdRoute: typeof BuilderIdRoute
+  WSlugRoute: typeof WSlugRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -92,6 +108,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/w/$slug': {
+      id: '/w/$slug'
+      path: '/w/$slug'
+      fullPath: '/w/$slug'
+      preLoaderRoute: typeof WSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/builder/$id': {
       id: '/builder/$id'
       path: '/builder/$id'
@@ -107,6 +130,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   TemplatesRoute: TemplatesRoute,
   BuilderIdRoute: BuilderIdRoute,
+  WSlugRoute: WSlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
