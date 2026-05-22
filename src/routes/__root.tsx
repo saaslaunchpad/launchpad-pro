@@ -74,11 +74,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "Waitly — Build stunning waitlist pages in minutes" },
+      { name: "description", content: "One-time $12. Unlimited beautiful waitlist pages with live preview editor and signup analytics." },
+      { name: "author", content: "Waitly" },
+      { property: "og:title", content: "Waitly — Stunning waitlist pages" },
+      { property: "og:description", content: "The waitlist builder that feels like a trillion-dollar product." },
+
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
