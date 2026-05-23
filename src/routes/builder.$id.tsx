@@ -1,8 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, ExternalLink, Copy, Check, Monitor, Smartphone, Trash2, Plus, GripVertical } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ArrowLeft, ExternalLink, Copy, Check, Monitor, Smartphone, Trash2, Plus, GripVertical, Upload, X, Twitter, Linkedin, Mail as MailIcon, Users } from "lucide-react";
 import { getWaitlist, updateWaitlist, updateConfig, deleteWaitlist, exportCsv } from "@/lib/waitlist-store";
-import type { SectionType, Waitlist, WaitlistConfig } from "@/lib/waitlist-types";
+import type { HeroVariant, SectionType, Waitlist, WaitlistConfig } from "@/lib/waitlist-types";
+import { CATEGORIES } from "@/lib/waitlist-types";
 import { WaitlistPreview } from "@/components/WaitlistPreview";
 import { toast } from "sonner";
 
@@ -20,6 +21,13 @@ const PRESETS: { name: string; theme: Partial<WaitlistConfig["theme"]> }[] = [
   { name: "Brutalist", theme: { bg: "oklch(0.99 0 0)", fg: "oklch(0.10 0 0)", surface: "oklch(0.96 0 0)", accent: "oklch(0.65 0.25 25)", aurora: false, grid: true, font: "sans" } },
 ];
 
+const HERO_VARIANTS: { id: HeroVariant; label: string }[] = [
+  { id: "centered", label: "Centered" },
+  { id: "split", label: "Split" },
+  { id: "minimal", label: "Minimal" },
+  { id: "bigtype", label: "Big Type" },
+];
+
 const ALL_SECTIONS: SectionType[] = ["hero", "form", "logos", "benefits", "testimonials", "faq", "footer"];
 
 function Builder() {
@@ -28,6 +36,7 @@ function Builder() {
   const [w, setW] = useState<Waitlist | undefined>();
   const [device, setDevice] = useState<"desktop" | "mobile">("desktop");
   const [copied, setCopied] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
 
   useEffect(() => {
     const found = getWaitlist(id);
@@ -35,7 +44,6 @@ function Builder() {
     setW(found);
   }, [id, nav]);
 
-  // Debounced persistence
   useEffect(() => {
     if (!w) return;
     const t = setTimeout(() => updateConfig(w.id, w.config), 350);
@@ -45,13 +53,13 @@ function Builder() {
   if (!w) return null;
   const config = w.config;
   const set = (c: WaitlistConfig) => setW({ ...w, config: c });
-
   const publishedUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/w/${w.slug}`;
 
   function togglePublish() {
     updateWaitlist(w!.id, { published: !w!.published });
     setW({ ...w!, published: !w!.published });
-    toast.success(w!.published ? "Unpublished" : "Published!", { description: w!.published ? "Page is now hidden" : publishedUrl });
+    if (!w!.published) setShareOpen(true);
+    toast.success(w!.published ? "Unpublished" : "Published! Your page is live.", { description: !w!.published ? publishedUrl : undefined });
   }
   function copy() {
     navigator.clipboard.writeText(publishedUrl);
@@ -68,7 +76,6 @@ function Builder() {
 
   return (
     <div className="h-screen flex flex-col bg-background">
-      {/* Top bar */}
       <header className="h-14 border-b border-border flex items-center justify-between px-4 shrink-0">
         <div className="flex items-center gap-3">
           <Link to="/dashboard" className="text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" /></Link>
@@ -79,24 +86,25 @@ function Builder() {
               onChange={(e) => { updateWaitlist(w.id, { title: e.target.value }); setW({ ...w, title: e.target.value }); }}
               className="bg-transparent outline-none font-medium hover:bg-surface px-2 py-1 rounded -mx-2"
             />
-            <span className="text-xs text-muted-foreground">· {w.signups.length} signups</span>
+            <Link to="/signups/$id" params={{ id: w.id }} className="text-xs text-muted-foreground hover:text-primary inline-flex items-center gap-1">
+              <Users className="h-3 w-3" /> {w.signups.length} signups · {w.views} views
+            </Link>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1 p-1 rounded-full bg-surface border border-border">
-            <button onClick={() => setDevice("desktop")} className={`p-1.5 rounded-full ${device === "desktop" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>
-              <Monitor className="h-3.5 w-3.5" />
-            </button>
-            <button onClick={() => setDevice("mobile")} className={`p-1.5 rounded-full ${device === "mobile" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>
-              <Smartphone className="h-3.5 w-3.5" />
-            </button>
+            <button onClick={() => setDevice("desktop")} className={`p-1.5 rounded-full ${device === "desktop" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}><Monitor className="h-3.5 w-3.5" /></button>
+            <button onClick={() => setDevice("mobile")} className={`p-1.5 rounded-full ${device === "mobile" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}><Smartphone className="h-3.5 w-3.5" /></button>
           </div>
           <button onClick={copy} className="text-xs px-3 py-1.5 rounded-full border border-border hover:bg-surface inline-flex items-center gap-1.5">
-            {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />} {w.slug}
+            {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />} /w/{w.slug}
           </button>
           <Link to="/w/$slug" params={{ slug: w.slug }} className="text-xs px-3 py-1.5 rounded-full border border-border hover:bg-surface inline-flex items-center gap-1.5">
             <ExternalLink className="h-3 w-3" /> Preview
           </Link>
+          {w.published && (
+            <button onClick={() => setShareOpen(true)} className="text-xs px-3 py-1.5 rounded-full border border-border hover:bg-surface">Share</button>
+          )}
           <button onClick={togglePublish}
             className={`text-xs px-4 py-1.5 rounded-full font-medium ${w.published ? "bg-surface border border-border" : "bg-primary text-primary-foreground"}`}>
             {w.published ? "Unpublish" : "Publish"}
@@ -105,7 +113,6 @@ function Builder() {
       </header>
 
       <div className="flex-1 flex min-h-0">
-        {/* Left: sections */}
         <aside className="w-60 border-r border-border bg-surface/40 p-3 overflow-y-auto shrink-0">
           <div className="text-xs uppercase tracking-wider text-muted-foreground px-2 py-2">Sections</div>
           {ALL_SECTIONS.map((s) => {
@@ -121,6 +128,7 @@ function Builder() {
             );
           })}
           <div className="mt-6 border-t border-border pt-4 px-2 space-y-2 text-xs">
+            <Link to="/signups/$id" params={{ id: w.id }} className="block text-muted-foreground hover:text-foreground">View signups & analytics →</Link>
             <button onClick={downloadCsv} className="w-full text-left text-muted-foreground hover:text-foreground">Export signups (CSV)</button>
             <button onClick={() => { if (confirm("Delete this waitlist?")) { deleteWaitlist(w.id); nav({ to: "/dashboard" }); } }}
                     className="w-full text-left text-destructive/80 hover:text-destructive inline-flex items-center gap-1">
@@ -129,7 +137,6 @@ function Builder() {
           </div>
         </aside>
 
-        {/* Center: live preview */}
         <main className="flex-1 overflow-auto bg-background/40 p-6">
           <div className={`mx-auto rounded-2xl border border-border overflow-hidden glow-ring ${device === "mobile" ? "max-w-sm" : "max-w-5xl"}`}
                style={{ minHeight: "calc(100vh - 8rem)" }}>
@@ -137,10 +144,38 @@ function Builder() {
           </div>
         </main>
 
-        {/* Right: settings */}
         <aside className="w-80 border-l border-border bg-surface/40 overflow-y-auto shrink-0">
           <Settings config={config} onChange={set} />
         </aside>
+      </div>
+
+      {shareOpen && (
+        <ShareDialog url={publishedUrl} title={w.title} onClose={() => setShareOpen(false)} published={w.published} />
+      )}
+    </div>
+  );
+}
+
+function ShareDialog({ url, title, onClose, published }: { url: string; title: string; onClose: () => void; published: boolean }) {
+  const tweet = `https://twitter.com/intent/tweet?text=${encodeURIComponent(`Just launched: ${title} 🚀`)}&url=${encodeURIComponent(url)}`;
+  const linkedin = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`;
+  const mail = `mailto:?subject=${encodeURIComponent(title)}&body=${encodeURIComponent(`Check out ${title}: ${url}`)}`;
+  return (
+    <div className="fixed inset-0 z-50 bg-background/70 backdrop-blur flex items-center justify-center p-4">
+      <div className="w-full max-w-md rounded-2xl border border-border bg-surface p-6 relative">
+        <button onClick={onClose} className="absolute top-3 right-3 text-muted-foreground"><X className="h-4 w-4" /></button>
+        <h3 className="font-display text-2xl">Share your waitlist</h3>
+        <p className="text-sm text-muted-foreground mt-1">{published ? "Your page is live and collecting emails." : "Publish to start collecting emails."}</p>
+        <div className="mt-5 flex items-center gap-2 p-1.5 rounded-full border border-border bg-background">
+          <input readOnly value={url} className="flex-1 bg-transparent px-3 py-1.5 text-sm outline-none" />
+          <button onClick={() => { navigator.clipboard.writeText(url); toast.success("Copied"); }}
+                  className="px-3 py-1.5 rounded-full bg-primary text-primary-foreground text-xs font-medium">Copy link</button>
+        </div>
+        <div className="mt-5 grid grid-cols-3 gap-2">
+          <a href={tweet} target="_blank" rel="noreferrer" className="p-3 rounded-xl border border-border hover:border-primary/50 text-xs inline-flex flex-col items-center gap-1"><Twitter className="h-4 w-4" /> Twitter</a>
+          <a href={linkedin} target="_blank" rel="noreferrer" className="p-3 rounded-xl border border-border hover:border-primary/50 text-xs inline-flex flex-col items-center gap-1"><Linkedin className="h-4 w-4" /> LinkedIn</a>
+          <a href={mail} className="p-3 rounded-xl border border-border hover:border-primary/50 text-xs inline-flex flex-col items-center gap-1"><MailIcon className="h-4 w-4" /> Email</a>
+        </div>
       </div>
     </div>
   );
@@ -150,8 +185,34 @@ function Settings({ config, onChange }: { config: WaitlistConfig; onChange: (c: 
   const update = (patch: Partial<WaitlistConfig>) => onChange({ ...config, ...patch });
   const updateTheme = (patch: Partial<WaitlistConfig["theme"]>) => onChange({ ...config, theme: { ...config.theme, ...patch } });
 
+  function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 500_000) { toast.error("Max 500KB"); return; }
+    const reader = new FileReader();
+    reader.onload = () => update({ logoUrl: reader.result as string });
+    reader.readAsDataURL(file);
+  }
+
   return (
     <div className="p-4 space-y-6">
+      <Group title="Category">
+        <select className="input" value={config.category ?? "Other"} onChange={(e) => update({ category: e.target.value as never })}>
+          {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+        </select>
+      </Group>
+
+      <Group title="Hero layout">
+        <div className="grid grid-cols-2 gap-2">
+          {HERO_VARIANTS.map((v) => (
+            <button key={v.id} onClick={() => updateTheme({ heroVariant: v.id })}
+              className={`text-xs p-2 rounded-lg border ${config.theme.heroVariant === v.id ? "border-primary bg-primary/10" : "border-border hover:border-primary/50"}`}>
+              {v.label}
+            </button>
+          ))}
+        </div>
+      </Group>
+
       <Group title="Theme">
         <div className="grid grid-cols-2 gap-2">
           {PRESETS.map((p) => (
@@ -166,12 +227,8 @@ function Settings({ config, onChange }: { config: WaitlistConfig; onChange: (c: 
             </button>
           ))}
         </div>
-        <Field label="Accent color">
-          <input type="color" value={oklchToHexFallback(config.theme.accent)} onChange={(e) => updateTheme({ accent: e.target.value })} className="w-full h-9 rounded-lg bg-transparent" />
-        </Field>
-        <Field label="Background">
-          <input type="color" value={oklchToHexFallback(config.theme.bg)} onChange={(e) => updateTheme({ bg: e.target.value })} className="w-full h-9 rounded-lg bg-transparent" />
-        </Field>
+        <Field label="Accent color"><input type="color" defaultValue="#7c3aed" onChange={(e) => updateTheme({ accent: e.target.value })} className="w-full h-9 rounded-lg bg-transparent" /></Field>
+        <Field label="Background"><input type="color" defaultValue="#1a1a2e" onChange={(e) => updateTheme({ bg: e.target.value })} className="w-full h-9 rounded-lg bg-transparent" /></Field>
         <Field label="Font">
           <select value={config.theme.font} onChange={(e) => updateTheme({ font: e.target.value as "sans" | "serif" })} className="input">
             <option value="sans">Inter (Sans)</option>
@@ -183,14 +240,29 @@ function Settings({ config, onChange }: { config: WaitlistConfig; onChange: (c: 
             onChange={(e) => updateTheme({ radius: `${Number(e.target.value) / 16}rem` })} className="w-full" />
         </Field>
         <div className="flex items-center gap-3 text-xs">
-          <label className="flex items-center gap-1.5"><input type="checkbox" checked={config.theme.aurora} onChange={(e) => updateTheme({ aurora: e.target.checked })} /> Aurora glow</label>
-          <label className="flex items-center gap-1.5"><input type="checkbox" checked={config.theme.grid} onChange={(e) => updateTheme({ grid: e.target.checked })} /> Grid bg</label>
+          <label className="flex items-center gap-1.5"><input type="checkbox" checked={config.theme.aurora} onChange={(e) => updateTheme({ aurora: e.target.checked })} /> Aurora</label>
+          <label className="flex items-center gap-1.5"><input type="checkbox" checked={config.theme.grid} onChange={(e) => updateTheme({ grid: e.target.checked })} /> Grid</label>
         </div>
       </Group>
 
       <Group title="Brand">
         <Field label="Brand name"><input className="input" value={config.brandName} onChange={(e) => update({ brandName: e.target.value })} /></Field>
-        <Field label="Logo (emoji/char)"><input className="input" value={config.logoEmoji} onChange={(e) => update({ logoEmoji: e.target.value })} /></Field>
+        <Field label="Logo (emoji)"><input className="input" value={config.logoEmoji} onChange={(e) => update({ logoEmoji: e.target.value })} /></Field>
+        <Field label="Logo image (optional)">
+          {config.logoUrl ? (
+            <div className="flex items-center gap-2">
+              <img src={config.logoUrl} alt="" className="h-9 w-9 rounded object-cover border border-border" />
+              <button onClick={() => update({ logoUrl: undefined })} className="text-xs text-destructive">Remove</button>
+            </div>
+          ) : (
+            <label className="block text-xs cursor-pointer">
+              <div className="flex items-center justify-center gap-1.5 py-2 rounded-lg border border-dashed border-border hover:border-primary/50">
+                <Upload className="h-3 w-3" /> Upload logo (PNG/SVG, &lt;500KB)
+              </div>
+              <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
+            </label>
+          )}
+        </Field>
         <Field label="Badge"><input className="input" value={config.badge} onChange={(e) => update({ badge: e.target.value })} /></Field>
       </Group>
 
@@ -199,7 +271,8 @@ function Settings({ config, onChange }: { config: WaitlistConfig; onChange: (c: 
         <Field label="Subheadline"><textarea className="input min-h-[70px]" value={config.subheadline} onChange={(e) => update({ subheadline: e.target.value })} /></Field>
         <Field label="CTA label"><input className="input" value={config.ctaLabel} onChange={(e) => update({ ctaLabel: e.target.value })} /></Field>
         <Field label="Email placeholder"><input className="input" value={config.emailPlaceholder} onChange={(e) => update({ emailPlaceholder: e.target.value })} /></Field>
-        <Field label="Social proof text"><input className="input" value={config.socialProof} onChange={(e) => update({ socialProof: e.target.value })} /></Field>
+        <Field label="Social proof"><input className="input" value={config.socialProof} onChange={(e) => update({ socialProof: e.target.value })} /></Field>
+        <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={config.collectName ?? false} onChange={(e) => update({ collectName: e.target.checked })} /> Also collect name</label>
       </Group>
 
       <Group title="Logos (social proof)">
@@ -210,17 +283,11 @@ function Settings({ config, onChange }: { config: WaitlistConfig; onChange: (c: 
         {config.benefits.map((b, i) => (
           <div key={i} className="p-2 rounded-lg border border-border space-y-1.5">
             <div className="flex gap-1.5">
-              <input className="input flex-1" value={b.icon} onChange={(e) => {
-                const arr = [...config.benefits]; arr[i] = { ...b, icon: e.target.value }; update({ benefits: arr });
-              }} placeholder="Icon (Lock, Gift, Award, Zap, Star...)" />
+              <input className="input flex-1" value={b.icon} onChange={(e) => { const arr = [...config.benefits]; arr[i] = { ...b, icon: e.target.value }; update({ benefits: arr }); }} placeholder="Icon" />
               <button onClick={() => update({ benefits: config.benefits.filter((_, x) => x !== i) })} className="text-destructive/70 px-2"><Trash2 className="h-3 w-3" /></button>
             </div>
-            <input className="input" value={b.title} onChange={(e) => {
-              const arr = [...config.benefits]; arr[i] = { ...b, title: e.target.value }; update({ benefits: arr });
-            }} placeholder="Title" />
-            <textarea className="input min-h-[50px]" value={b.body} onChange={(e) => {
-              const arr = [...config.benefits]; arr[i] = { ...b, body: e.target.value }; update({ benefits: arr });
-            }} placeholder="Description" />
+            <input className="input" value={b.title} onChange={(e) => { const arr = [...config.benefits]; arr[i] = { ...b, title: e.target.value }; update({ benefits: arr }); }} placeholder="Title" />
+            <textarea className="input min-h-[50px]" value={b.body} onChange={(e) => { const arr = [...config.benefits]; arr[i] = { ...b, body: e.target.value }; update({ benefits: arr }); }} placeholder="Description" />
           </div>
         ))}
         <button onClick={() => update({ benefits: [...config.benefits, { icon: "Star", title: "New benefit", body: "Description here." }] })}
@@ -233,14 +300,10 @@ function Settings({ config, onChange }: { config: WaitlistConfig; onChange: (c: 
         {config.faq.map((f, i) => (
           <div key={i} className="p-2 rounded-lg border border-border space-y-1.5">
             <div className="flex gap-1.5">
-              <input className="input flex-1" value={f.q} onChange={(e) => {
-                const arr = [...config.faq]; arr[i] = { ...f, q: e.target.value }; update({ faq: arr });
-              }} placeholder="Question" />
+              <input className="input flex-1" value={f.q} onChange={(e) => { const arr = [...config.faq]; arr[i] = { ...f, q: e.target.value }; update({ faq: arr }); }} placeholder="Question" />
               <button onClick={() => update({ faq: config.faq.filter((_, x) => x !== i) })} className="text-destructive/70 px-2"><Trash2 className="h-3 w-3" /></button>
             </div>
-            <textarea className="input min-h-[50px]" value={f.a} onChange={(e) => {
-              const arr = [...config.faq]; arr[i] = { ...f, a: e.target.value }; update({ faq: arr });
-            }} placeholder="Answer" />
+            <textarea className="input min-h-[50px]" value={f.a} onChange={(e) => { const arr = [...config.faq]; arr[i] = { ...f, a: e.target.value }; update({ faq: arr }); }} placeholder="Answer" />
           </div>
         ))}
         <button onClick={() => update({ faq: [...config.faq, { q: "New question?", a: "Answer." }] })}
@@ -258,28 +321,17 @@ function Settings({ config, onChange }: { config: WaitlistConfig; onChange: (c: 
 }
 
 function Group({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2 px-1">{title}</div>
-      <div className="space-y-2">{children}</div>
-    </div>
-  );
+  return (<div><div className="text-xs uppercase tracking-wider text-muted-foreground mb-2 px-1">{title}</div><div className="space-y-2">{children}</div></div>);
 }
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label className="block">
-      <div className="text-[11px] text-muted-foreground mb-1">{label}</div>
-      {children}
-    </label>
-  );
+  return (<label className="block"><div className="text-[11px] text-muted-foreground mb-1">{label}</div>{children}</label>);
 }
 function ListEditor({ items, onChange, placeholder }: { items: string[]; onChange: (v: string[]) => void; placeholder?: string }) {
   return (
     <div className="space-y-1.5">
       {items.map((v, i) => (
         <div key={i} className="flex gap-1.5">
-          <input className="input flex-1" value={v} placeholder={placeholder}
-                 onChange={(e) => { const arr = [...items]; arr[i] = e.target.value; onChange(arr); }} />
+          <input className="input flex-1" value={v} placeholder={placeholder} onChange={(e) => { const arr = [...items]; arr[i] = e.target.value; onChange(arr); }} />
           <button onClick={() => onChange(items.filter((_, x) => x !== i))} className="text-destructive/70 px-2"><Trash2 className="h-3 w-3" /></button>
         </div>
       ))}
@@ -288,11 +340,4 @@ function ListEditor({ items, onChange, placeholder }: { items: string[]; onChang
       </button>
     </div>
   );
-}
-
-// Tolerate either hex or oklch in the color inputs (color picker returns hex; we accept either)
-function oklchToHexFallback(c: string): string {
-  if (c.startsWith("#")) return c;
-  // crude fallback hex so the <input type=color> shows something
-  return "#7c3aed";
 }
