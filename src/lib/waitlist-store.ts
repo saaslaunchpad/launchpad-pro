@@ -1,14 +1,10 @@
-import { Waitlist, getTemplate, WaitlistConfig } from "./waitlist-types";
+import { Waitlist, getTemplate, WaitlistConfig, Category } from "./waitlist-types";
 
 const KEY = "waitly.waitlists.v1";
 
 function read(): Waitlist[] {
   if (typeof window === "undefined") return [];
-  try {
-    return JSON.parse(localStorage.getItem(KEY) ?? "[]");
-  } catch {
-    return [];
-  }
+  try { return JSON.parse(localStorage.getItem(KEY) ?? "[]"); } catch { return []; }
 }
 function write(items: Waitlist[]) {
   if (typeof window === "undefined") return;
@@ -30,26 +26,25 @@ function slugify(s: string) {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "").slice(0, 40) || "waitlist";
 }
 
-export function createWaitlist(templateId: string, title?: string): Waitlist {
+export function createWaitlist(templateId: string, title?: string, category?: Category, brandName?: string): Waitlist {
   const t = getTemplate(templateId);
   const items = read();
   const id = crypto.randomUUID();
-  const baseSlug = slugify(title ?? t.config.brandName);
-  let slug = baseSlug;
-  let i = 2;
+  const baseSlug = slugify(title ?? brandName ?? t.config.brandName);
+  let slug = baseSlug; let i = 2;
   while (items.some((w) => w.slug === slug)) slug = `${baseSlug}-${i++}`;
   const now = Date.now();
+  const cloned: WaitlistConfig = JSON.parse(JSON.stringify(t.config));
+  if (brandName) cloned.brandName = brandName;
+  if (category) cloned.category = category;
   const w: Waitlist = {
-    id,
-    slug,
-    title: title ?? t.name,
+    id, slug,
+    title: title ?? brandName ?? t.name,
     templateId,
-    config: JSON.parse(JSON.stringify(t.config)),
-    published: false,
-    views: 0,
-    signups: [],
-    createdAt: now,
-    updatedAt: now,
+    category: category ?? t.category,
+    config: cloned,
+    published: false, views: 0, signups: [],
+    createdAt: now, updatedAt: now,
   };
   write([w, ...items]);
   return w;
@@ -62,14 +57,8 @@ export function updateWaitlist(id: string, patch: Partial<Waitlist>) {
   items[idx] = { ...items[idx], ...patch, updatedAt: Date.now() };
   write(items);
 }
-
-export function updateConfig(id: string, config: WaitlistConfig) {
-  updateWaitlist(id, { config });
-}
-
-export function deleteWaitlist(id: string) {
-  write(read().filter((w) => w.id !== id));
-}
+export function updateConfig(id: string, config: WaitlistConfig) { updateWaitlist(id, { config }); }
+export function deleteWaitlist(id: string) { write(read().filter((w) => w.id !== id)); }
 
 export function addSignup(slug: string, email: string, name?: string) {
   const items = read();

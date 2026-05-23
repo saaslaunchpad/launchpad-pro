@@ -13,6 +13,7 @@ import { Route as TemplatesRouteImport } from './routes/templates'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as WSlugRouteImport } from './routes/w.$slug'
+import { Route as SignupsIdRouteImport } from './routes/signups.$id'
 import { Route as BuilderIdRouteImport } from './routes/builder.$id'
 
 const TemplatesRoute = TemplatesRouteImport.update({
@@ -35,6 +36,11 @@ const WSlugRoute = WSlugRouteImport.update({
   path: '/w/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SignupsIdRoute = SignupsIdRouteImport.update({
+  id: '/signups/$id',
+  path: '/signups/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BuilderIdRoute = BuilderIdRouteImport.update({
   id: '/builder/$id',
   path: '/builder/$id',
@@ -46,6 +52,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/templates': typeof TemplatesRoute
   '/builder/$id': typeof BuilderIdRoute
+  '/signups/$id': typeof SignupsIdRoute
   '/w/$slug': typeof WSlugRoute
 }
 export interface FileRoutesByTo {
@@ -53,6 +60,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/templates': typeof TemplatesRoute
   '/builder/$id': typeof BuilderIdRoute
+  '/signups/$id': typeof SignupsIdRoute
   '/w/$slug': typeof WSlugRoute
 }
 export interface FileRoutesById {
@@ -61,19 +69,33 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/templates': typeof TemplatesRoute
   '/builder/$id': typeof BuilderIdRoute
+  '/signups/$id': typeof SignupsIdRoute
   '/w/$slug': typeof WSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/dashboard' | '/templates' | '/builder/$id' | '/w/$slug'
+  fullPaths:
+    | '/'
+    | '/dashboard'
+    | '/templates'
+    | '/builder/$id'
+    | '/signups/$id'
+    | '/w/$slug'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard' | '/templates' | '/builder/$id' | '/w/$slug'
+  to:
+    | '/'
+    | '/dashboard'
+    | '/templates'
+    | '/builder/$id'
+    | '/signups/$id'
+    | '/w/$slug'
   id:
     | '__root__'
     | '/'
     | '/dashboard'
     | '/templates'
     | '/builder/$id'
+    | '/signups/$id'
     | '/w/$slug'
   fileRoutesById: FileRoutesById
 }
@@ -82,6 +104,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   TemplatesRoute: typeof TemplatesRoute
   BuilderIdRoute: typeof BuilderIdRoute
+  SignupsIdRoute: typeof SignupsIdRoute
   WSlugRoute: typeof WSlugRoute
 }
 
@@ -115,6 +138,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/signups/$id': {
+      id: '/signups/$id'
+      path: '/signups/$id'
+      fullPath: '/signups/$id'
+      preLoaderRoute: typeof SignupsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/builder/$id': {
       id: '/builder/$id'
       path: '/builder/$id'
@@ -130,6 +160,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   TemplatesRoute: TemplatesRoute,
   BuilderIdRoute: BuilderIdRoute,
+  SignupsIdRoute: SignupsIdRoute,
   WSlugRoute: WSlugRoute,
 }
 export const routeTree = rootRouteImport
